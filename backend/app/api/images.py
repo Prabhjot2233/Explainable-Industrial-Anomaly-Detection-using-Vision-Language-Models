@@ -50,11 +50,3 @@ async def upload_image(file: UploadFile = File(...)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing image: {str(e)}")
-```
-
-Now, I'll register this router in the main FastAPI app.
-
-```tool
-TOOL_NAME: edit_existing_file
-BEGIN_ARG: filepath
-backend/app/main.py

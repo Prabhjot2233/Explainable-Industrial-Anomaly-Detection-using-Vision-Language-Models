@@ -1,0 +1,14 @@
+model: ViT-B-16-plus-240
+pretrained: laion400m_e32
+data_root: data/mvtec_ad
+results_dir: results
+categories: [carpet, leather, tile, bottle, transistor]
+image_size: 240
+window_scales: [2, 3]
+window_chunk_size: 16
+batch_size: 1
+num_workers: 0
+seed: 0
+device: auto
+score_mode: combined
+smooth_sigma: 0.0

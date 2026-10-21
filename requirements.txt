@@ -1,0 +1,9 @@
+# ML pipeline dependencies (web backend has its own: backend/requirements.txt)
+torch
+torchvision
+numpy
+pillow
+scikit-learn
+scipy
+pyyaml
+pytest

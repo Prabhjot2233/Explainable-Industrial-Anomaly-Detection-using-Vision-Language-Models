@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Data & experiment outputs (large, regenerable)
+data/*
+!data/.gitkeep
+results/*
+!results/.gitkeep
+temp_uploads/
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# Env / OS / editor
+.env
+.DS_Store
+.vscode/
+.idea/
