@@ -101,3 +101,37 @@ PyTorch's name for a multi-dimensional array of numbers. An image batch is a ten
 ### Checkpoint (`laion400m_e31` / `e32`)
 Saved model weights. `e31` and `e32` are the same CLIP model after training epochs 31 and 32
 on the LAION-400M dataset. Step 10 compares them.
+
+---
+
+## Weeks 3–4 terms
+
+### Few-shot
+Giving the detector a handful (k = 1, 2, 4) of **normal** example images before testing.
+*Analogy:* showing a new inspector two photos of a perfect carpet before their shift.
+
+### Prompt ablation
+Removing parts of the text prompts (fewer templates or state words) to measure how much each part helps.
+
+### PatchCore / memory bank
+A non-language baseline that stores feature vectors of normal image patches and flags test
+patches that are far from all of them. *Analogy:* a scrapbook of normal texture snippets.
+
+### AnomalyCLIP
+A CLIP detector that uses generic "normal/damaged **object**" prompts for every product category.
+
+### Saliency
+The gradient of the score with respect to each pixel: how sensitive the score is to that pixel.
+
+### Integrated Gradients (IG) / Expected-IG
+Accumulates gradients along a path from a baseline image to the real image. Expected-IG uses
+real **normal** images as baselines. *Analogy:* slowly turning up a dimmer switch.
+
+### Completeness axiom
+IG attributions sum to `score(image) − score(baseline)`. We check that the gap is small.
+
+### Grad-CAM (ViT)
+Weights the last transformer layer's patch features by their gradients to get a coarse 15×15 relevance map.
+
+### Hook
+A small function PyTorch calls automatically when a layer runs (forward) or receives gradients (backward).

@@ -1,0 +1,30 @@
+# Configuration for Week 5-6 XAI Benchmark & ABIGX Evaluation
+model: ViT-B-16-plus-240
+pretrained: laion400m_e32
+data_root: data/mvtec_ad
+results_dir: results/explanations
+cache_dir: results/cache
+categories: [carpet, leather, tile, bottle, transistor]
+category: carpet
+image_size: 240
+score_mode: combined_smooth
+device: auto
+seed: 0
+max_images: 5
+
+# Explainer parameters
+explainers: [saliency, gradcam_vit, ig_black, ig_expected, abigx]
+k_shots: 2
+ig_steps: 20
+afr_steps: 15
+afr_step_size: 0.03
+afr_eps: 0.35
+afr_lambda_prox: 0.05
+normal_score_threshold: 0.35
+min_relative_drop: 0.15
+
+# Evaluation metrics
+metrics:
+  del_steps: 10
+  add_steps: 10
+

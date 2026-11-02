@@ -11,6 +11,8 @@ any background in Python, PyTorch or computer vision to follow it.
 | [`glossary_for_beginners.md`](glossary_for_beginners.md) | Look up a word you don't know (CLIP, AUROC, gradient…) |
 | [`week1_foundation_and_env.md`](week1_foundation_and_env.md) | Understand Steps 1–3: utilities, environment check, metrics |
 | [`week2_data_and_winclip.md`](week2_data_and_winclip.md) | Understand Steps 4–10: dataset, WinCLIP detector, evaluation |
+| [`week3_detection_baselines.md`](week3_detection_baselines.md) | Understand Steps 11–13: few-shot, PatchCore, AnomalyCLIP |
+| [`week4_visual_explanations.md`](week4_visual_explanations.md) | Understand Steps 14–17: Saliency, IG, Grad-CAM, visualisation |
 
 ## Progress tracker
 
@@ -26,6 +28,13 @@ any background in Python, PyTorch or computer vision to follow it.
 | 8 | 2 | Gradient flow and device consistency tests | ⬜ |
 | 9 | 2 | Zero-shot evaluation runner | ⬜ |
 | 10 | 2 | Checkpoint comparison (e31 vs e32) | ⬜ |
+| 11 | 3 | Few-shot WinCLIP+ and prompt ablation | ✅ Done (tests pass) |
+| 12 | 3 | Differentiable PatchCore | ✅ Done (tests pass) |
+| 13 | 3 | AnomalyCLIP and baselines runner | ✅ Done (tests pass) |
+| 14 | 4 | Score wrapper and Saliency | ✅ Done (tests pass) |
+| 15 | 4 | Integrated Gradients (black and Expected-IG) | ✅ Done (tests pass) |
+| 16 | 4 | ViT Grad-CAM | ✅ Done (tests pass) |
+| 17 | 4 | Visualisation and Week 4 runner | ✅ Done (tests pass) |
 
 ---
 

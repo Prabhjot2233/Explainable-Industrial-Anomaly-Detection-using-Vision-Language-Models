@@ -1,0 +1,16 @@
+# Step 12-13: detector comparison (WinCLIP zero/4-shot, AnomalyCLIP, PatchCore)
+model: ViT-B-16-plus-240
+pretrained: laion400m_e32
+data_root: data/mvtec_ad
+results_dir: results/baselines
+cache_dir: results/cache
+categories: [carpet, leather, tile, bottle, transistor]
+image_size: 240
+num_workers: 0
+seed: 0
+device: auto
+detectors:
+  winclip_zeroshot: {type: winclip, k_shots: 0, window_scales: [2, 3], window_chunk_size: 16, score_mode: combined}
+  winclip_4shot:    {type: winclip, k_shots: 4, window_scales: [2, 3], window_chunk_size: 16, score_mode: combined}
+  anomalyclip:      {type: anomalyclip, k_shots: 0, score_mode: combined, smooth_sigma: 4.0}
+  patchcore:        {type: patchcore, k_shots: 4, coreset_ratio: 0.1, max_memory: 2000, sigma: 4.0}

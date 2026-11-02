@@ -1,0 +1,18 @@
+# Configuration for Grounded VLM Language Explainer
+model: ViT-B-16-plus-240
+pretrained: laion400m_e32
+anomaly_threshold: 0.45
+percentile_threshold: 90.0
+min_component_pixels: 20
+backend: openclip_grounded # "openclip_grounded" or "ollama_vlm"
+ollama_url: "http://localhost:11434/api/generate"
+ollama_model: "llava"
+
+defect_classes:
+  cut: "a photo of a surface cut or slash"
+  hole: "a photo of a puncture, hole, or missing material"
+  scratch: "a photo of a thin surface scratch or abrasion"
+  contamination: "a photo of foreign contamination, stain, or discoloration"
+  crack: "a photo of a structural crack or fracture"
+  deformation: "a photo of a bent, warped, or misplaced component"
+
