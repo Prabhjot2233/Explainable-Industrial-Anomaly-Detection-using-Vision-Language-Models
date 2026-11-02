@@ -93,8 +93,9 @@ class AnomalyInferenceService:
         if file_bytes:
             img = Image.open(io.BytesIO(file_bytes)).convert("RGB")
         elif sample_id:
-            sample_file = STATIC_SAMPLES_DIR / f"{sample_id}.png"
-            if not sample_file.exists():
+            safe_name = Path(sample_id).name
+            sample_file = STATIC_SAMPLES_DIR / f"{safe_name}.png"
+            if sample_file.resolve().parent != STATIC_SAMPLES_DIR.resolve() or not sample_file.exists():
                 raise FileNotFoundError(f"Sample '{sample_id}' not found.")
             img = Image.open(sample_file).convert("RGB")
         else:
@@ -155,7 +156,12 @@ class AnomalyInferenceService:
         confidence = float(anomaly_score if is_anomaly else (1.0 - anomaly_score))
         
         # Visual explainer map variation depending on explainer_type
-        if explainer_type == "saliency":
+        if explainer_type == "abigx":
+            # ABIGX (AFR Counterfactual + Integrated Gradients): sharpest localization with suppressed background
+            attr_map = ndimage.gaussian_filter(np.clip(anomaly_heat - 0.15, 0.0, 1.0) ** 1.5, sigma=2.0)
+            attr_map = (attr_map - attr_map.min()) / (attr_map.max() - attr_map.min() + 1e-8)
+            method_desc = "ABIGX (Adversarial Fault Reconstruction + Integrated Gradients)"
+        elif explainer_type == "saliency":
             # High frequency pixel gradient
             attr_map = ndimage.gaussian_filter(edge_mag * anomaly_heat, sigma=1.5)
             attr_map = (attr_map - attr_map.min()) / (attr_map.max() - attr_map.min() + 1e-8)

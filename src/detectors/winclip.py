@@ -84,8 +84,31 @@ class WinCLIPDetector(BaseDetector):
                                  align_corners=False)
         return F.normalize(self.model.encode_image(imgs).float(), dim=-1)
 
+    def _encode_dense(self, x: Tensor) -> tuple[Tensor, Tensor]:
+        """Single-pass global [B, D] and dense patch tokens [B, N_patch, D] for fast, MPS-safe backprop."""
+        v = self.model.visual
+        if x.shape[-1] != self.clip_input_size or x.shape[-2] != self.clip_input_size:
+            x = F.interpolate(x, size=(self.clip_input_size,) * 2, mode="bilinear",
+                              align_corners=False)
+        h = v.transformer(v._embeds(x))
+        pooled, tokens = v._pool(h)
+        if getattr(v, "proj", None) is not None:
+            pooled, tokens = pooled @ v.proj, tokens @ v.proj
+        return F.normalize(pooled.float(), dim=-1), F.normalize(tokens.float(), dim=-1)
+
     def _window_size(self, scale: int) -> int:
         return scale * self.patch_size
+
+    def _encode_chunk(self, imgs: Tensor, use_ckpt: bool = False) -> Tensor:
+        if imgs.shape[-1] != self.clip_input_size or imgs.shape[-2] != self.clip_input_size:
+            imgs = F.interpolate(imgs, size=(self.clip_input_size,) * 2, mode="bilinear",
+                                 align_corners=False)
+        if use_ckpt and torch.is_grad_enabled() and imgs.requires_grad:
+            from torch.utils.checkpoint import checkpoint
+            raw = checkpoint(self.model.encode_image, imgs, use_reentrant=False)
+        else:
+            raw = self.model.encode_image(imgs)
+        return F.normalize(raw.float(), dim=-1)
 
     def _encode_windows(self, x: Tensor, scale: int) -> Tensor:
         """x [B,3,H,W] -> unit-norm window embeddings [B, N_win, D]."""
@@ -94,9 +117,11 @@ class WinCLIPDetector(BaseDetector):
         cols = F.unfold(x, kernel_size=w, stride=self.window_stride)  # [B, 3*w*w, N]
         n = cols.shape[-1]
         wins = cols.transpose(1, 2).reshape(b * n, 3, w, w)
-        # Use a conservative chunk size (8) during gradient calculation to avoid MPS memory spikes
-        chunk_size = min(self.window_chunk_size, 8) if torch.is_grad_enabled() else self.window_chunk_size
-        feats = [self._encode(wins[i:i + chunk_size])
+        # Use gradient checkpointing during backprop when window count is large (n > 16)
+        # so intermediate transformer activations are never held for 365 windows at once.
+        use_ckpt = torch.is_grad_enabled() and self.clip_input_size >= 224 and n > 16
+        chunk_size = min(self.window_chunk_size, 4) if use_ckpt else self.window_chunk_size
+        feats = [self._encode_chunk(wins[i:i + chunk_size], use_ckpt=use_ckpt)
                  for i in range(0, wins.shape[0], chunk_size)]
         return torch.cat(feats, dim=0).view(b, n, -1)
 
@@ -132,6 +157,39 @@ class WinCLIPDetector(BaseDetector):
     # ------------------------------------------------------------------ forward
     def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         hw = (x.shape[-2], x.shape[-1])
+        # Fast, MPS-safe single-pass dense-token path during gradient attribution on full ViT
+        # (avoids F.fold/col2im backward stall on Apple Silicon MPS and 365x window graph blowup)
+        if (
+            torch.is_grad_enabled()
+            and self.clip_input_size >= 224
+            and hasattr(self.model.visual, "_embeds")
+        ):
+            pooled, fdense = self._encode_dense(x)
+            s_global = self._text_prob(pooled)
+            b, n_tok, _ = fdense.shape
+            g = int(round(n_tok ** 0.5))
+            p_text = self._text_prob(fdense).view(b, 1, g, g)
+            amap = F.interpolate(p_text, size=hw, mode="bilinear", align_corners=False)[:, 0]
+            if self.is_fewshot and self.ref_window_features:
+                vis_maps = []
+                for s in self.window_scales:
+                    if s not in self.ref_window_features:
+                        continue
+                    sim = fdense @ self.ref_window_features[s].t()
+                    if self.score_mode == "combined_smooth":
+                        nn_sim = torch.logsumexp(self.tau_ref * sim, dim=-1) / self.tau_ref
+                    else:
+                        nn_sim = sim.amax(dim=-1)
+                    s_vis = (0.5 * (1.0 - nn_sim)).clamp(min=0.0).view(b, 1, g, g)
+                    vis_maps.append(
+                        F.interpolate(s_vis, size=hw, mode="bilinear", align_corners=False)[:, 0]
+                    )
+                if vis_maps:
+                    m_vis = torch.stack(vis_maps).mean(dim=0)
+                    amap = (1 - self.alpha_vis) * amap + self.alpha_vis * m_vis
+            amap = gaussian_blur(amap, self.smooth_sigma)
+            return combine_scores(self.score_mode, s_global, amap), amap
+
         # Stage A: global (encoded first so Grad-CAM hooks see the full image first)
         s_global = self._text_prob(self._encode(x))
 

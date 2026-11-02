@@ -86,5 +86,6 @@ class MVTecDataset(Dataset):
             "mask": mask,
             "label": label,
             "defect_type": defect,
+            "category": self.category,
             "path": img_path.as_posix(),
         }

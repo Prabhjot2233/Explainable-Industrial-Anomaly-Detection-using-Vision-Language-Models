@@ -5,6 +5,7 @@ Run with:
 """
 from __future__ import annotations
 
+import gc
 import json
 import sys
 import time
@@ -27,7 +28,7 @@ from PIL import Image
 from src.data.mvtec import MVTecDataset, clip_denormalize, clip_normalize
 from src.detectors.anomalyclip import AnomalyCLIPDetector
 from src.detectors.patchcore import PatchCoreDetector
-from src.detectors.winclip import WinCLIPDetector
+from src.detectors.winclip import WinCLIPDetector, load_clip
 from src.explainers import (
     ABIGXExplainer,
     IntegratedGradientsExplainer,
@@ -55,7 +56,14 @@ st.set_page_config(
 CATEGORIES = ["carpet", "leather", "tile", "bottle", "transistor", "cable", "capsule", "hazelnut", "metal_nut", "pill", "screw", "toothbrush", "wood", "zipper", "grid"]
 
 
-@st.cache_resource(max_entries=6)
+@st.cache_resource(max_entries=1)
+def load_shared_clip_backbone(device_str: str):
+    """Loads a single shared instance of ViT-B-16-plus-240 (~600MB) across the whole app."""
+    device = torch.device(device_str)
+    return load_clip("ViT-B-16-plus-240", "laion400m_e32", device)
+
+
+@st.cache_resource(max_entries=1)
 def load_detector_cached(
     cat: str,
     device_str: str,
@@ -64,6 +72,7 @@ def load_detector_cached(
     detector_model: str = "WinCLIP (ViT-B/16+)",
     shots_mode: str = "Few-Shot (k=2)",
 ):
+    gc.collect()
     device = torch.device(device_str)
     # Parse k from shots_mode (e.g. "Few-Shot (k=2)" -> 2, "Zero-Shot (k=0)" -> 0)
     k_shots = 2
@@ -75,20 +84,24 @@ def load_detector_cached(
         k_shots = 4
 
     if "AnomalyCLIP" in detector_model:
+        clip_model, clip_tokenizer = load_shared_clip_backbone(device_str)
         det = AnomalyCLIPDetector(
             category=cat,
             model_name="ViT-B-16-plus-240",
             pretrained="laion400m_e32",
             device=device,
             score_mode=score_mode,
+            model=clip_model,
+            tokenizer=clip_tokenizer,
         )
     elif "PatchCore" in detector_model:
         det = PatchCoreDetector(
             device=device,
-            score_mode="max_smooth" if "smooth" in score_mode else "max",
+            score_mode="combined_smooth" if "smooth" in score_mode else "map_max",
         )
         k_shots = max(k_shots, 2)  # PatchCore requires normal reference bank
     else:
+        clip_model, clip_tokenizer = load_shared_clip_backbone(device_str)
         # Fast Interactive Mode uses 80x80 windows with stride 80 (9 windows covering 100% of 240x240)
         # instead of 365 overlapping windows (36.6x speedup for real-time interactive inspection).
         win_scales = (5,) if fast_mode else (2, 3)
@@ -102,6 +115,8 @@ def load_detector_cached(
             window_stride=win_stride,
             score_mode=score_mode,
             cache_dir="results/cache",
+            model=clip_model,
+            tokenizer=clip_tokenizer,
         )
 
     # Load references if dataset exists
@@ -119,6 +134,7 @@ def load_detector_cached(
     elif hasattr(det, "set_reference"):
         det.set_reference(None)
 
+    gc.collect()
     return det, refs
 
 

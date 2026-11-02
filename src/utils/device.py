@@ -14,9 +14,6 @@ def _mps_available() -> bool:
 def _use_mps() -> torch.device:
     # Let unsupported MPS ops silently fall back to CPU instead of crashing.
     os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-    # Prevent MPS unified memory allocator from claiming unlimited system RAM
-    if "PYTORCH_MPS_HIGH_WATERMARK_RATIO" not in os.environ:
-        os.environ["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
     return torch.device("mps")
 
 

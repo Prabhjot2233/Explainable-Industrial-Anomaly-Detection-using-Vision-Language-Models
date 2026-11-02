@@ -30,6 +30,7 @@ const DETECTORS = [
 ];
 
 const EXPLAINERS = [
+  { id: 'abigx', name: 'ABIGX (AFR + IG)', badge: 'Counterfactual XAI', desc: 'Adversarial Fault Reconstruction baseline + Integrated Gradients' },
   { id: 'vit_gradcam', name: 'ViT Grad-CAM', badge: 'Attention Relevance', desc: 'Gradients of last transformer block mapped to 15x15 patch tokens' },
   { id: 'saliency', name: 'Input Saliency', badge: 'Pixel Gradients', desc: 'Direct ∂score/∂pixel sensitivity map via Captum' },
   { id: 'ig_black', name: 'Integrated Gradients', badge: 'Black Baseline', desc: 'Path integration from zero baseline satisfying completeness' },
@@ -634,8 +635,14 @@ export default function App() {
 
                   {/* Panel 2: Detector Anomaly Heatmap */}
                   <div className="preview-card">
-                    <div className="preview-card-img-wrap">
-                      <img src={result.visuals.heatmap_overlay} alt="Anomaly Heatmap" className="preview-card-img" />
+                    <div className="preview-card-img-wrap" style={{ position: 'relative' }}>
+                      <img src={result.visuals.original} alt="Original base" className="preview-card-img" />
+                      <img
+                        src={result.visuals.heatmap_overlay}
+                        alt="Anomaly Heatmap"
+                        className="preview-card-img"
+                        style={{ position: 'absolute', inset: 0, opacity: heatmapAlpha }}
+                      />
                     </div>
                     <div className="preview-card-label">
                       <span>2. Detector Anomaly Map</span>
@@ -645,8 +652,14 @@ export default function App() {
 
                   {/* Panel 3: Explainer Attribution Map */}
                   <div className="preview-card">
-                    <div className="preview-card-img-wrap">
-                      <img src={result.visuals.attribution_overlay} alt="Attribution Map" className="preview-card-img" />
+                    <div className="preview-card-img-wrap" style={{ position: 'relative' }}>
+                      <img src={result.visuals.original} alt="Original base" className="preview-card-img" />
+                      <img
+                        src={result.visuals.attribution_overlay}
+                        alt="Attribution Map"
+                        className="preview-card-img"
+                        style={{ position: 'absolute', inset: 0, opacity: heatmapAlpha }}
+                      />
                     </div>
                     <div className="preview-card-label">
                       <span>3. Visual Attribution Overlay</span>

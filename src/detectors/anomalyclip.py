@@ -21,6 +21,7 @@ ANOMALOUS_PROMPTS = [
 class AnomalyCLIPDetector(BaseDetector):
     def __init__(
         self,
+        category: str | None = None,
         model_name: str = "ViT-B-16-plus-240",
         pretrained: str | None = "laion400m_e32",
         device: torch.device | str = "cpu",
@@ -32,6 +33,7 @@ class AnomalyCLIPDetector(BaseDetector):
         tokenizer=None,
     ) -> None:
         super().__init__(score_mode=score_mode, device=device)
+        self.category = category
         if model is None:
             model, tokenizer = load_clip(model_name, pretrained, self.device)
         self.model = model

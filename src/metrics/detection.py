@@ -67,3 +67,13 @@ def pro_score(masks, maps, fpr_limit: float = 0.3, num_thresholds: int = 200) ->
         p_end = p[-1] + (p2 - p[-1]) * (fpr_limit - f[-1]) / max(f2 - f[-1], 1e-12)
         f, p = np.append(f, fpr_limit), np.append(p, p_end)
     return float(np.trapezoid(p, f) / fpr_limit) if hasattr(np, "trapezoid") else float(np.trapz(p, f) / fpr_limit)
+
+
+def evaluate_category(labels, scores, masks, maps) -> dict[str, float]:
+    """Compute all three standard MVTec AD detection metrics for a category."""
+    return {
+        "image_auroc": image_auroc(labels, scores),
+        "pixel_auroc": pixel_auroc(masks, maps),
+        "pro": pro_score(masks, maps),
+    }
+
